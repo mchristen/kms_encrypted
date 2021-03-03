@@ -82,7 +82,11 @@ module KmsEncrypted
 
                 if eager_encrypt == :fetch_id
                   raise ArgumentError, ":fetch_id only works with Postgres" unless self.class.connection.adapter_name =~ /postg/i
-                  self.id ||= self.class.connection.execute("select nextval('#{self.class.sequence_name}')").first["nextval"]
+                  if self.class.type_for_attribute(:id).type == :uuid
+                    self.id ||= self.class.connection.execute("select gen_random_uuid() as nextval").first["nextval"]
+                  else
+                    self.id ||= self.class.connection.execute("select nextval('#{self.class.sequence_name}')").first["nextval"]
+                  end
                 end
 
                 if eager_encrypt == true || ([:try, :fetch_id].include?(eager_encrypt) && id)
